@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestion des Réservations de Salles</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --success: #27ae60;
+            --warning: #f39c12;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --border: #bdc3c7;
+            --bg-hover: #f8f9fa;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 0.95em;
+            opacity: 0.9;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 30px;
+            padding: 30px;
+        }
+
+        /* === FORMULAIRE === */
+        .form-section {
+            background: var(--light);
+            padding: 25px;
+            border-radius: 10px;
+            border-left: 5px solid var(--secondary);
+        }
+
+        .form-section h2 {
+            font-size: 1.3em;
+            margin-bottom: 20px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .form-section h2:before {
+            content: "📋";
+            font-size: 1.2em;
+        }
+
+        .form-group {
+            margin-bottom: 18px;
+        }
+
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: var(--dark);
+            font-size: 0.9em;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-family: inherit;
+            transition: all 0.3s ease;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--secondary);
+            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.1);
+        }
+
+        .time-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        button {
+            width: 100%;
+            padding: 12px 20px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #2980b9;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* === CALENDRIER === */
+        .calendar-section {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .calendar-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .calendar-header h2 {
+            font-size: 1.5em;
+            color: var(--primary);
+            flex: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .calendar-header h2:before {
+            content: "📅";
+            font-size: 1.3em;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .nav-buttons button {
+            padding: 10px 15px;
+            width: auto;
+            font-size: 0.9em;
+        }
+
+        .filter-section {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .filter-section select {
+            flex: 1;
+            min-width: 150px;
+        }
+
+        .calendar {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .day-header {
+            background: var(--primary);
+            color: white;
+            padding: 12px;
+            text-align: center;
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 0.9em;
+        }
+
+        .day {
+            background: var(--light);
+            border: 2px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+            min-height: 120px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .day:hover {
+            background: white;
+            border-color: var(--secondary);
+            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
+            transform: translateY(-2px);
+        }
+
+        .day.other-month {
+            opacity: 0.5;
+            background: #f5f5f5;
+        }
+
+        .day.today {
+            border-color: var(--secondary);
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .day-date {
+            font-weight: 700;
+            color: var(--primary);
+            margin-bottom: 8px;
+            font-size: 0.9em;
+        }
+
+        .reservation-item {
+            background: white;
+            border-left: 3px solid var(--secondary);
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .reservation-item:hover {
+            background: var(--bg-hover);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        .reservation-item.salle1 {
+            border-left-color: #3498db;
+            background: rgba(52, 152, 219, 0.05);
+        }
+
+        .reservation-item.salle2 {
+            border-left-color: #e74c3c;
+            background: rgba(231, 76, 60, 0.05);
+        }
+
+        .reservation-item.salle3 {
+            border-left-color: #27ae60;
+            background: rgba(39, 174, 96, 0.05);
+        }
+
+        .reservation-item.salle4 {
+            border-left-color: #f39c12;
+            background: rgba(243, 156, 18, 0.05);
+        }
+
+        .reservation-name {
+            font-weight: 600;
+            color: var(--primary);
+        }
+
+        .reservation-time {
+            color: #666;
+            font-size: 0.7em;
+            margin-top: 2px;
+        }
+
+        .delete-btn {
+            width: 20px;
+            height: 20px;
+            padding: 0;
+            background: var(--accent);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 12px;
+            display: none;
+            position: absolute;
+            top: 4px;
+            right: 4px;
+            line-height: 1;
+        }
+
+        .reservation-item:hover .delete-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .delete-btn:hover {
+            background: #c0392b;
+        }
+
+        /* === RÉSERVATIONS LISTÉES === */
+        .reservations-list {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 20px;
+            border-left: 5px solid var(--success);
+        }
+
+        .reservations-list h3 {
+            margin-bottom: 15px;
+            color: var(--primary);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .reservations-list h3:before {
+            content: "📝";
+        }
+
+        .reservation-row {
+            background: white;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 6px;
+            border-left: 4px solid var(--secondary);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 0.9em;
+        }
+
+        .reservation-row.salle1 {
+            border-left-color: #3498db;
+        }
+
+        .reservation-row.salle2 {
+            border-left-color: #e74c3c;
+        }
+
+        .reservation-row.salle3 {
+            border-left-color: #27ae60;
+        }
+
+        .reservation-row.salle4 {
+            border-left-color: #f39c12;
+        }
+
+        .reservation-row button {
+            width: auto;
+            padding: 6px 12px;
+            font-size: 0.85em;
+            background: var(--accent);
+            margin: 0;
+            margin-left: 10px;
+        }
+
+        .reservation-row button:hover {
+            background: #c0392b;
+        }
+
+        .empty-message {
+            text-align: center;
+            color: #999;
+            padding: 20px;
+            font-style: italic;
+        }
+
+        /* === RESPONSIVE === */
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+            }
+
+            .calendar {
+                grid-template-columns: repeat(7, 1fr);
+            }
+
+            .day {
+                min-height: 100px;
+                font-size: 0.9em;
+            }
+        }
+
+        @media (max-width: 600px) {
+            .calendar {
+                grid-template-columns: repeat(7, 1fr);
+            }
+
+            .day {
+                min-height: 70px;
+                padding: 5px;
+                font-size: 0.8em;
+            }
+
+            .day-date {
+                font-size: 0.75em;
+            }
+
+            .reservation-item {
+                font-size: 0.65em;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+
+        .no-scroll {
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Gestion des Réservations de Salles</h1>
+            <p>Organisez vos réservations facilement et visualisez les disponibilités</p>
+        </div>
+
+        <div class="main-content">
+            <!-- === FORMULAIRE === -->
+            <div class="form-section">
+                <h2>Ajouter une réservation</h2>
+
+                <div class="form-group">
+                    <label for="date">Date *</label>
+                    <input type="date" id="date" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="salle">Salle *</label>
+                    <select id="salle" required>
+                        <option value="">-- Sélectionner une salle --</option>
+                        <option value="Bureau de Magali IEG">Bureau de Magali IEG</option>
+                        <option value="Salle de réunion">Salle de réunion</option>
+                        <option value="Salle Amundi">Salle Amundi</option>
+                        <option value="Bureau ouvert IEG">Bureau ouvert IEG</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label>Horaires *</label>
+                    <div class="time-group">
+                        <div>
+                            <label for="heureDebut" style="margin-bottom: 5px; font-weight: 500;">Début</label>
+                            <input type="time" id="heureDebut" required>
+                        </div>
+                        <div>
+                            <label for="heureFin" style="margin-bottom: 5px; font-weight: 500;">Fin</label>
+                            <input type="time" id="heureFin" required>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="responsable">Responsable *</label>
+                    <input type="text" id="responsable" placeholder="Nom du responsable" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="objet">Objet de la réservation</label>
+                    <textarea id="objet" rows="3" placeholder="Description courte..."></textarea>
+                </div>
+
+                <button onclick="ajouterReservation()">Ajouter la réservation</button>
+            </div>
+
+            <!-- === CALENDRIER + LISTE === -->
+            <div class="calendar-section">
+                <div class="calendar-header">
+                    <h2 id="monthTitle"></h2>
+                    <div class="nav-buttons">
+                        <button onclick="moisPrecedent()">← Précédent</button>
+                        <button onclick="moisActuel()">Aujourd'hui</button>
+                        <button onclick="moisSuivant()">Suivant →</button>
+                    </div>
+                </div>
+
+                <div class="filter-section">
+                    <label style="flex: 1; display: flex; align-items: center; gap: 8px; margin: 0;">
+                        Filtrer par salle:
+                        <select id="filterSalle" onchange="afficherCalendrier()" style="flex: 1;">
+                            <option value="">Toutes les salles</option>
+                            <option value="Bureau de Magali IEG">Bureau de Magali IEG</option>
+                            <option value="Salle de réunion">Salle de réunion</option>
+                            <option value="Salle Amundi">Salle Amundi</option>
+                            <option value="Bureau ouvert IEG">Bureau ouvert IEG</option>
+                        </select>
+                    </label>
+                </div>
+
+                <div class="calendar" id="calendar"></div>
+
+                <div class="reservations-list">
+                    <h3>Toutes les réservations</h3>
+                    <div id="reservationsList"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let reservations = JSON.parse(localStorage.getItem('reservations')) || [];
+        let currentDate = new Date();
+
+        // Initialiser la date du formulaire
+        document.getElementById('date').valueAsDate = new Date();
+
+        // Événement sur le formulaire
+        document.getElementById('date').addEventListener('change', function() {
+            afficherCalendrier();
+        });
+
+        function ajouterReservation() {
+            const date = document.getElementById('date').value;
+            const salle = document.getElementById('salle').value;
+            const heureDebut = document.getElementById('heureDebut').value;
+            const heureFin = document.getElementById('heureFin').value;
+            const responsable = document.getElementById('responsable').value;
+            const objet = document.getElementById('objet').value;
+
+            if (!date || !salle || !heureDebut || !heureFin || !responsable) {
+                alert('Veuillez remplir tous les champs obligatoires');
+                return;
+            }
+
+            if (heureDebut >= heureFin) {
+                alert('L\'heure de fin doit être après l\'heure de début');
+                return;
+            }
+
+            const reservation = {
+                id: Date.now(),
+                date,
+                salle,
+                heureDebut,
+                heureFin,
+                responsable,
+                objet
+            };
+
+            reservations.push(reservation);
+            localStorage.setItem('reservations', JSON.stringify(reservations));
+
+            // Réinitialiser le formulaire
+            document.getElementById('date').valueAsDate = new Date();
+            document.getElementById('salle').value = '';
+            document.getElementById('heureDebut').value = '';
+            document.getElementById('heureFin').value = '';
+            document.getElementById('responsable').value = '';
+            document.getElementById('objet').value = '';
+
+            afficherCalendrier();
+        }
+
+        function supprimerReservation(id) {
+            if (confirm('Êtes-vous sûr de vouloir supprimer cette réservation ?')) {
+                reservations = reservations.filter(r => r.id !== id);
+                localStorage.setItem('reservations', JSON.stringify(reservations));
+                afficherCalendrier();
+            }
+        }
+
+        function moisPrecedent() {
+            currentDate.setMonth(currentDate.getMonth() - 1);
+            afficherCalendrier();
+        }
+
+        function moisSuivant() {
+            currentDate.setMonth(currentDate.getMonth() + 1);
+            afficherCalendrier();
+        }
+
+        function moisActuel() {
+            currentDate = new Date();
+            afficherCalendrier();
+        }
+
+        function afficherCalendrier() {
+            const annee = currentDate.getFullYear();
+            const mois = currentDate.getMonth();
+            const aujourd = new Date();
+
+            // Mise à jour du titre
+            const moisNoms = ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin',
+                             'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'];
+            document.getElementById('monthTitle').textContent = `${moisNoms[mois]} ${annee}`;
+
+            // En-têtes des jours
+            const calendar = document.getElementById('calendar');
+            calendar.innerHTML = '';
+
+            const jours = ['Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam', 'Dim'];
+            jours.forEach(j => {
+                const header = document.createElement('div');
+                header.className = 'day-header';
+                header.textContent = j;
+                calendar.appendChild(header);
+            });
+
+            // Premier jour du mois
+            const firstDay = new Date(annee, mois, 1);
+            const lastDay = new Date(annee, mois + 1, 0);
+            const firstDayWeek = firstDay.getDay() === 0 ? 6 : firstDay.getDay() - 1;
+
+            // Jours du mois précédent
+            const prevLastDay = new Date(annee, mois, 0).getDate();
+            for (let i = firstDayWeek - 1; i >= 0; i--) {
+                const dayEl = createDayElement(prevLastDay - i, mois - 1, annee, true);
+                calendar.appendChild(dayEl);
+            }
+
+            // Jours du mois courant
+            for (let day = 1; day <= lastDay.getDate(); day++) {
+                const isToday = day === aujourd.getDate() && 
+                               mois === aujourd.getMonth() && 
+                               annee === aujourd.getFullYear();
+                const dayEl = createDayElement(day, mois, annee, false, isToday);
+                calendar.appendChild(dayEl);
+            }
+
+            // Jours du mois suivant
+            const remainingDays = 42 - (firstDayWeek + lastDay.getDate());
+            for (let day = 1; day <= remainingDays; day++) {
+                const dayEl = createDayElement(day, mois + 1, annee, true);
+                calendar.appendChild(dayEl);
+            }
+
+            afficherReservations();
+        }
+
+        function createDayElement(day, mois, annee, isOtherMonth, isToday = false) {
+            const dayEl = document.createElement('div');
+            dayEl.className = 'day';
+
+            if (isOtherMonth) dayEl.classList.add('other-month');
+            if (isToday) dayEl.classList.add('today');
+
+            const dateObj = new Date(annee, mois, day);
+            const dateStr = dateObj.toISOString().split('T')[0];
+
+            const dateDisplay = document.createElement('div');
+            dateDisplay.className = 'day-date';
+            dateDisplay.textContent = day;
+            dayEl.appendChild(dateDisplay);
+
+            // Ajouter les réservations du jour
+            const filterSalle = document.getElementById('filterSalle').value;
+            const dayReservations = reservations.filter(r => {
+                const match = r.date === dateStr;
+                return filterSalle ? match && r.salle === filterSalle : match;
+            });
+
+            dayReservations.forEach(res => {
+                const resEl = document.createElement('div');
+                const salleClass = 'salle' + (1 + ['Bureau de Magali IEG', 'Salle de réunion', 'Salle Amundi', 'Bureau ouvert IEG'].indexOf(res.salle));
+                resEl.className = `reservation-item ${salleClass}`;
+                resEl.innerHTML = `
+                    <div class="reservation-name">${res.salle}</div>
+                    <div class="reservation-time">${res.heureDebut} - ${res.heureFin}</div>
+                    <button class="delete-btn" onclick="supprimerReservation(${res.id})">×</button>
+                `;
+                resEl.title = `${res.responsable}\n${res.objet}`;
+                dayEl.appendChild(resEl);
+            });
+
+            return dayEl;
+        }
+
+        function afficherReservations() {
+            const listDiv = document.getElementById('reservationsList');
+            const filterSalle = document.getElementById('filterSalle').value;
+
+            const resList = filterSalle 
+                ? reservations.filter(r => r.salle === filterSalle)
+                : reservations;
+
+            if (resList.length === 0) {
+                listDiv.innerHTML = '<div class="empty-message">Aucune réservation</div>';
+                return;
+            }
+
+            // Trier par date
+            resList.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+            listDiv.innerHTML = resList.map(res => {
+                const salleClass = 'salle' + (1 + ['Bureau de Magali IEG', 'Salle de réunion', 'Salle Amundi', 'Bureau ouvert IEG'].indexOf(res.salle));
+                return `
+                    <div class="reservation-row ${salleClass}">
+                        <div>
+                            <strong>${new Date(res.date).toLocaleDateString('fr-FR', {weekday: 'short', day: 'numeric', month: 'long'})}</strong>
+                            <br>
+                            ${res.salle} - ${res.heureDebut} à ${res.heureFin}
+                            <br>
+                            <small style="color: #666;">${res.responsable}</small>
+                        </div>
+                        <button onclick="supprimerReservation(${res.id})">Supprimer</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Initialisation
+        afficherCalendrier();
+    </script>
+</body>
+</html>
